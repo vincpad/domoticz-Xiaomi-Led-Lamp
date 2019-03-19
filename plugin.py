@@ -1,6 +1,6 @@
 # A Python plugin for Domoticz to access Xiaomi Philips LED Ball Lamp
 #
-# Author: Deennoo
+# Author: vincpad (fork of Deennoo)
 #
 # TODO: Update text sensors only when changed
 #
@@ -11,17 +11,17 @@
 # v0.1.1 - Add Scenes control
 # v0.1.2 - remove on/off switch, bright dimmer, temp dimmer, to use a cccw widget, update only if needed, sperate scenes widget status / !!! still segfault @ plugin restart
 """
-<plugin key="XiaomiPhilipsLEDBallLamp" name="Xiaomi Philips LED Ball Lamp" author="Deennoo" version="0.1.2" wikilink="https://github.com/rytilahti/python-miio" externallink="https://github.com/deennoo/domoticz-Xiaomi-Led-Lamp/tree/master">
+<plugin key="XiaomiPhilipsLEDBallLamp" name="Xiaomi Philips LED Ball Lamp" author="vincpad (fork of Deennoo)" version="0.1.2" wikilink="https://github.com/rytilahti/python-miio" externallink="https://github.com/deennoo/domoticz-Xiaomi-Led-Lamp/tree/master">
     <params>
-		<param field="Address" label="IP Address" width="200px" required="true" default="127.0.0.1"/>
-		<param field="Mode1" label="Xiaomi Philips LED Ball Lamp token" default="" width="400px" required="true"  />
-        <param field="Mode3" label="Check every x minutes" width="40px" default="1" required="true" />
-		<param field="Mode6" label="Debug" width="75px">
-			<options>
-				<option label="True" value="Debug"/>
-				<option label="False" value="Normal" default="true" />
-			</options>
-		</param>
+        <param field="Address" label="IP Address" width="200px" required="true" default="127.0.0.1"/>
+        <param field="Mode1" label="Xiaomi Philips LED Ball Lamp token" default="" width="400px" required="true"  />
+        <param field="Mode3" label="Check every x seconds" width="40px" default="1" required="true" />
+        <param field="Mode6" label="Debug" width="75px">
+            <options>
+                <option label="True" value="Debug"/>
+                <option label="False" value="Normal" default="true" />
+            </options>
+        </param>
     </params>
 </plugin>
 """
@@ -56,7 +56,7 @@ class BulbStatus:
         """
         Response of script:
 
-		   "<PhilipsBulbStatus power=on, brightness=9, color_temperature=9, scene=0, delay_off_countdown=0>"
+           "<PhilipsBulbStatus power=on, brightness=9, color_temperature=9, scene=0, delay_off_countdown=0>"
         """
 
         cmd = ['./MyBulb.py', str(AddressIP), str(Mode1)]
@@ -102,7 +102,7 @@ class BasePlugin:
 
         # Do not change below UNIT constants!
         self.UNIT_SCENES         = 1
-        self.UNIT_CCCW           = 2		
+        self.UNIT_CCCW           = 2        
 
         self.nextpoll = datetime.datetime.now()
         return
@@ -118,7 +118,7 @@ class BasePlugin:
             Domoticz.Debugging(0)
 
         Domoticz.Heartbeat(20)
-        self.pollinterval = int(Parameters["Mode3"]) * 60
+        self.pollinterval = int(Parameters["Mode3"])
 
 
         
@@ -128,24 +128,24 @@ class BasePlugin:
             Options = {"Scenes": "|||||", "LevelNames": "Off|Bright|TV|Warm|Midnight", "LevelOffHidden": "true", "SelectorStyle": "0"}
             Domoticz.Device(Name="Scenes", Unit=self.UNIT_SCENES, Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()
             Domoticz.Device(Name="CCCW", Unit=self.UNIT_CCCW, Type=241, Subtype=8, Switchtype=7).Create()
-			
-			
+            
+            
             Domoticz.Log("Devices created.")
         else:
 
-		#Scenes		
+        #Scenes     
             if (self.UNIT_SCENES in Devices ):
                 Domoticz.Log("Device UNIT_SCENES with id " + str(self.UNIT_SCENES) + " exist")
-				
+                
             else:
                Options = {"Scenes": "|||||", "LevelNames": "Off|Bright|TV|Warm|Midnight", "LevelOffHidden": "true", "SelectorStyle": "0"}
-               Domoticz.Device(Name="Scenes", Unit=self.UNIT_SCENES, Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()				
+               Domoticz.Device(Name="Scenes", Unit=self.UNIT_SCENES, Type=244, Subtype=62 , Switchtype=18, Options = Options).Create()              
          #CCCW
             if (self.UNIT_CCCW in Devices ):
                 Domoticz.Log("Device UNIT_CCCW with id " + str(self.UNIT_CCCW) + " exist")
-				
+                
             else:
-               Domoticz.Device(Name="CCCW", Unit=self.UNIT_SCENES, Type=241, Subtype=8 , Switchtype=7).Create()	
+               Domoticz.Device(Name="CCCW", Unit=self.UNIT_SCENES, Type=241, Subtype=8 , Switchtype=7).Create() 
             
 
         self.onHeartbeat(fetch=False)
@@ -167,12 +167,12 @@ class BasePlugin:
         # Parameters["Address"] - IP address, Parameters["Token"] - token
         cmd = ['./MyBulb.py', str(Parameters["Address"]), str(Parameters["Mode1"])]
 
-		#widget selector scenes	
+        #widget selector scenes 
         if Unit == self.UNIT_SCENES:
             cmd.append('--scene')
             cmd.append(str(int(int(Level)/10)))
 
-		#widget cccw	
+        #widget cccw    
         elif Unit == self.UNIT_CCCW:
 
             #border limits check
@@ -181,21 +181,21 @@ class BasePlugin:
             elif int(Level) > 99 :
                 Level = 99
 
-		    #OFF
+            #OFF
             if Command == "Off" :
                 cmd.append('--power')
                 cmd.append(str(Command).upper())
-		    #ON
+            #ON
             elif Command == "On" :
                 cmd.append('--power')
                 cmd.append(str(Command).upper())
 
-		    #Set Level
+            #Set Level
             elif Command =="Set Level" :
                 cmd.append('--level')
                 cmd.append(str(Level))
 
-		    #White Temp & Brightness
+            #White Temp & Brightness
             elif Command == "Set Color" :
                 Hue_List = json.loads(Color)
                 if Hue_List['m'] == 2:
@@ -226,7 +226,7 @@ class BasePlugin:
         if Parameters["Mode6"] == 'Debug':
             Domoticz.Debug(data)
         self.onHeartbeat(fetch=True)
-		
+        
     
 
     def onNotification(self, Name, Subject, Text, Status, Priority, Sound, ImageFile):
